@@ -1,4 +1,6 @@
 node_modules/
 *.log
-.env.local
-__pycache__/
+.env
+.DS_Store
+*.py
+setup_log.txt
