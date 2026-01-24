@@ -3,68 +3,45 @@ const cors = require('cors');
 const path = require('path');
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok',
-    message: 'Server is running',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'ok', message: 'Server running', timestamp: new Date().toISOString() });
 });
 
 app.post('/api/paraphrase', (req, res) => {
   try {
     const { text } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'No text provided' 
-      });
-    }
-    
-    const paraphrased = text.toUpperCase();
+    if (!text) return res.status(400).json({ success: false, error: 'No text' });
     
     res.json({
       success: true,
       original_text: text,
-      paraphrased_text: paraphrased,
+      paraphrased_text: text.toUpperCase(),
       word_count: text.split(/\s+/).length
     });
-    
   } catch (error) {
-    res.status(500).json({ 
-      success: false,
-      error: error.message 
-    });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
-// Get PORT from environment (Railway provides this)
+// CRITICAL: Use Railway's PORT
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
 
-// IMPORTANT: Listen on 0.0.0.0 and use PORT from environment
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, HOST, () => {
   console.log('='.repeat(60));
-  console.log('Academic Paraphraser Server');
+  console.log('Academic Paraphraser Server STARTED');
   console.log('='.repeat(60));
-  console.log(`Port: ${PORT}`);
-  console.log(`Host: 0.0.0.0`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('PORT from ENV:', process.env.PORT || 'NOT SET - using 3000');
+  console.log('Listening on:', HOST + ':' + PORT);
   console.log('='.repeat(60));
 });
