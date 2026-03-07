@@ -42,9 +42,14 @@ echo   Launching application...
 echo ============================================================
 echo.
 
-venv\Scripts\python.exe app\main.py
+venv\Scripts\python.exe app\main.py 2>&1
+echo.
+echo ============================================================
+echo   EXIT CODE: %errorlevel%
+echo ============================================================
+echo.
 if %errorlevel% neq 0 (
-    echo.
-    echo [ERROR] Application closed with an error.
-    pause
-}
+    echo [ERROR] Application closed with an error. See above for details.
+)
+echo Press any key to close...
+pause > nul
