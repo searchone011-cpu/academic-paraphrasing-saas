@@ -2,6 +2,7 @@
 Digital Alchemist X-1 - Main GUI Window
 Dark theme, 5-model tabs, real-time word count, background processing.
 Copy/Paste/Cut/Select-All fully enabled via right-click menu and Ctrl shortcuts.
+Left panel is fully scrollable.
 """
 
 import tkinter as tk
@@ -147,14 +148,53 @@ class MainWindow(tk.Tk):
         main = tk.Frame(self, bg=BG_DARK)
         main.pack(fill='both', expand=True, padx=6, pady=6)
 
-        left = tk.Frame(main, bg=BG_DARK, width=348)
-        left.pack(side='left', fill='y')
-        left.pack_propagate(False)
+        # ── Left panel with scrollbar ──────────────────────────────
+        left_outer = tk.Frame(main, bg=BG_DARK, width=362)
+        left_outer.pack(side='left', fill='y')
+        left_outer.pack_propagate(False)
 
+        left_sb = tk.Scrollbar(left_outer, orient='vertical',
+                                bg=BG_DARKER, troughcolor=BG_DARKER,
+                                activebackground=ACCENT,
+                                highlightthickness=0, bd=0)
+        left_sb.pack(side='right', fill='y')
+
+        self._left_canvas = tk.Canvas(
+            left_outer, bg=BG_DARK, bd=0,
+            highlightthickness=0,
+            yscrollcommand=left_sb.set)
+        self._left_canvas.pack(side='left', fill='both', expand=True)
+
+        left_sb.config(command=self._left_canvas.yview)
+
+        # Inner frame that holds all left-panel widgets
+        self._left_inner = tk.Frame(self._left_canvas, bg=BG_DARK)
+        self._left_canvas_win = self._left_canvas.create_window(
+            (0, 0), window=self._left_inner, anchor='nw')
+
+        # Resize canvas window width when canvas resizes
+        def _on_canvas_resize(event):
+            self._left_canvas.itemconfig(
+                self._left_canvas_win, width=event.width)
+        self._left_canvas.bind('<Configure>', _on_canvas_resize)
+
+        # Update scroll region when inner frame changes
+        def _on_inner_resize(event):
+            self._left_canvas.configure(
+                scrollregion=self._left_canvas.bbox('all'))
+        self._left_inner.bind('<Configure>', _on_inner_resize)
+
+        # Mouse wheel scroll on left panel
+        def _on_mousewheel(event):
+            self._left_canvas.yview_scroll(
+                int(-1 * (event.delta / 120)), 'units')
+        self._left_canvas.bind_all('<MouseWheel>', _on_mousewheel)
+
+        # Right panel
         right = tk.Frame(main, bg=BG_DARK)
         right.pack(side='left', fill='both', expand=True, padx=(6, 0))
 
-        self._build_left(left)
+        self._build_left(self._left_inner)
         self._build_right(right)
 
     def _lf(self, parent, title):
@@ -198,15 +238,16 @@ class MainWindow(tk.Tk):
 
         # ── Text Input ────────────────────────────────────────────
         txt = self._lf(parent, 'TEXT INPUT  (paste here)')
-        txt.pack(fill='both', expand=True, padx=4, pady=2)
+        txt.pack(fill='x', padx=4, pady=2)
 
         self._input_text = scrolledtext.ScrolledText(
             txt, bg=BG_INPUT, fg=TEXT_WHITE,
             insertbackground=TEXT_WHITE,
             font=('Segoe UI', 10), wrap='word',
             relief='flat', bd=0,
+            height=12,
             undo=True)
-        self._input_text.pack(fill='both', expand=True)
+        self._input_text.pack(fill='x', expand=False)
         self._input_text.bind('<KeyRelease>',
                                lambda e: self._update_word_count())
         _attach_context_menu(self._input_text)
@@ -292,13 +333,13 @@ class MainWindow(tk.Tk):
 
         # ── Log ───────────────────────────────────────────────────
         log = self._lf(parent, 'PROCESSING LOG')
-        log.pack(fill='both', expand=False, padx=4, pady=(2, 4))
+        log.pack(fill='x', padx=4, pady=(2, 8))
 
         self._log = scrolledtext.ScrolledText(
             log, bg=BG_DARKER, fg=SUCCESS,
             font=('Consolas', 8), wrap='word',
             height=6, relief='flat', state='disabled')
-        self._log.pack(fill='both', expand=True)
+        self._log.pack(fill='x', expand=False)
         _attach_context_menu(self._log)
 
     def _build_right(self, parent):
